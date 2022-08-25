@@ -1,0 +1,20 @@
+{
+
+  "manifest_version": 2,
+  "name": "BuyCars",
+  "version": "1.0",
+
+  "description": "Buys every car you want, at any time!",
+
+  "icons": {
+    "48": "icons/border-48.png"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["https://usedcars.vwfs.com/vehicles/detail/*"],
+      "js": ["buycars.js"]
+    }
+  ]
+
+}
