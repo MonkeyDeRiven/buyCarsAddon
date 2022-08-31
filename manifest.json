@@ -15,6 +15,15 @@
       "matches": ["https://usedcars.vwfs.com/vehicles/detail/*"],
       "js": ["buycars.js"]
     }
-  ]
+  ],
 
+  "permissions": [
+    "webRequest",
+    "webRequestBlocking",
+    "<all_urls>"
+  ],
+
+  "background": {
+    "scripts": ["background.js"]
+  }
 }
