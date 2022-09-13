@@ -1,8 +1,39 @@
+import "background";
 
-setTimeout(function(){
+
+let token = "";
+let clientId = "";
+let businessPartnerId = "";
+let userId = "";
+let userAgent = "";
+
+//json Data
+let ivFileId = "";
+let kvps = "";
+
+
+let request = new XMLHttpRequest();
+//document.onload = buyCar();
+
+function sleep(ms) {
     "use strict"
-    addRigedEvent();
-}, 6000);
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+waitTillSiteIsLoaded();
+
+async function waitTillSiteIsLoaded() {
+    "use strict"
+    while (true) {
+        try {
+            addRigedEvent();
+            break;
+        } catch {
+            console.log("Website ist noch nicht geladen!");
+            await sleep(1000);
+        }
+    }
+}
 
 //add a new buy button to the website
 function embedRigedBuyButton() {
@@ -13,51 +44,67 @@ function embedRigedBuyButton() {
     clickMeButton.style = here[1].getElementsByClassName("c-btn")[0].style;
     here[1].removeChild(here[1].getElementsByClassName("c-btn")[0]);
 
+    let notInForm = document.getElementsByClassName("o-layout__item u-2/4 u-1/1@s");
+
     clickMeButton.innerText = "kaufen";
     clickMeButton.id = "riged"
+    clickMeButton.type = "button";
 
-    here[1].appendChild(clickMeButton);
-    document.getElementById("riged").addEventListener("click", buyCar);
+    notInForm[1].appendChild(clickMeButton);
+
+    //here[1].appendChild(clickMeButton);
+    document.getElementById("riged").addEventListener("click", test);
+
+    //get carID and kvps
+    let carId = document.getElementsByTagName("h6")[0].innerText;
+    kvps = document.getElementById("kvpsSelection").firstChild.innerText;
+    ivFileId = kvps + "-" + carId;
 }
 
 function addRigedEvent(){
+    "use strict"
     let trigger = document.getElementsByClassName("c-btn c-btn--icon o-button-container__button");
     trigger[1].addEventListener("click", embedRigedBuyButton);
 }
 
 function test(){
     "use strict"
-    let buttonList = document.getElementsByClassName("c-btn");
-    alert(buttonList.length);
+    console.log("key: " + key + "\n"
+    + "token: " + window.localStorage.getItem("token") +  "\n"
+    + "ivgpiduser: " + window.localStorage.getItem("ivgpiduser") + "\n"
+    + "clientId: " + window.localStorage.getItem("clientId") + "\n"
+    + "userAgent: " + window.localStorage.getItem("userAgent") + "\n");
 }
-
-let request = new XMLHttpRequest();
 
 function buyCar(){
     "use strict"
-
-    let cookies = document.cookie;
-    console.log(cookies);
-
     let jsonDataArray = {
-        "ivFileId":"DEU80260V-2022651559",
+        "ivFileId":ivFileId,
         "ivPackageId":"",
         "ivBuyFixedPrice":"X",
-        "ivKvpsFixedPrice":"DEUV22225",
+        "ivKvpsFixedPrice":kvps,
         "itBidAssistant":[]
     };
 
-    console.log(JSON.stringify(jsonDataArray));
-
     let jsonData = JSON.parse(JSON.stringify(jsonDataArray));
-    console.log(jsonData);
     //https://api.usedcars.vwfs.com/gis-functions/B2C/offers/DEU80260G-2022724832/bids
-    let url = "https://www.google.de/";
+    let url = "https://www.google.com/";
 
-    request.open("PUT", url); // URL für HTTP-PUT
-    request.onreadystatechange = processData; //Callback-Handler zuordnen
+    request.open("POST", url); // URL für HTTP-PUT
+    //request.onreadystatechange = processData; //Callback-Handler zuordnen
+    for(let i = 0; i < sharedRecourses.length; i++){
+        console.log(sharedRecourses[i]);
+    }
+    request.setRequestHeader("Accept", "*/*");
+    request.setRequestHeader("Accept-Language", "en");
+    request.setRequestHeader("Ocp-Apim-Subscription-Key", sharedRecourses.key);
+    request.setRequestHeader("oidc-access-token", sharedRecourses.token);
+    request.setRequestHeader("User-Agent", sharedRecourses.userAgent);
+    //request.setRequestHeader("X-GIS-BUSINESSPARTNER-ID", sharedRecourses.businessPartnerId);
+    request.setRequestHeader("X-GIS-CLIENT-ID", sharedRecourses.clientId);
+    request.setRequestHeader("X-GIS-USER-ID", sharedRecourses.ivgpiduser);
+    request.setRequestHeader("Content-Type", "application/json")
     request.send(jsonData); // Request abschicken
-
 }
 
 function processData() {
@@ -72,3 +119,4 @@ function processData() {
         } else console.error("Uebertragung fehlgeschlagen" + request.status);
     }
 }
+
