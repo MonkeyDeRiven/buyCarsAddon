@@ -1,6 +1,4 @@
-import "background";
-
-
+//import {sharedRecourses} from './background.js';
 let token = "";
 let clientId = "";
 let businessPartnerId = "";
@@ -29,8 +27,7 @@ async function waitTillSiteIsLoaded() {
             addRigedEvent();
             break;
         } catch {
-            console.log("Website ist noch nicht geladen!");
-            await sleep(1000);
+            await sleep(50);
         }
     }
 }
@@ -69,11 +66,7 @@ function addRigedEvent(){
 
 function test(){
     "use strict"
-    console.log("key: " + key + "\n"
-    + "token: " + window.localStorage.getItem("token") +  "\n"
-    + "ivgpiduser: " + window.localStorage.getItem("ivgpiduser") + "\n"
-    + "clientId: " + window.localStorage.getItem("clientId") + "\n"
-    + "userAgent: " + window.localStorage.getItem("userAgent") + "\n");
+    console.log(document.domain);
 }
 
 function buyCar(){
@@ -119,4 +112,19 @@ function processData() {
         } else console.error("Uebertragung fehlgeschlagen" + request.status);
     }
 }
+
+browser.runtime.onMessage.addListener((request) => {
+    "use strict"
+
+    token = request.t;
+    /*
+    key = request.k;
+    userId = request.userId;
+    clientId = request.cId;
+    userAgent = request.uAgent;
+     */
+
+    console.log(token);
+    return Promise.resolve({ response: "transaction done"});
+});
 

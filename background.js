@@ -1,5 +1,7 @@
-/*module.exports = {sharedRecourses};
-
+let script = document.createElement("script");
+script.type = "module";
+script.src = "";
+document.head.appendChild(script);
 let sharedRecourses = {
     "key":"",
     "token":"",
@@ -7,7 +9,8 @@ let sharedRecourses = {
     "clientId":"",
     "userAgent":"",
 }
-*/
+
+//export {sharedRecourses};
 
 let token = "";
 let key = "";
@@ -22,23 +25,28 @@ function rewriteUserAgentHeader(e) {
     e.requestHeaders.forEach((header) => {
         if(header.name == "Ocp-Apim-Subscription-Key"){
             //sharedRecourses["key"] = header.value;
-            window.localStorage.setItem("key", header.value);
+            key = header.value;
+            sendMessageToTabs();
         }
         if(header.name == "oidc-access-token"){
             //sharedRecourses["token"] = header.value;
-            window.localStorage.setItem("token", header.value);
+            token = header.token;
+            sendMessageToTabs();
         }
         if(header.name == "X-GIS-CLIENT-ID"){
             //sharedRecourses["clientId"] = header.value;
-            window.localStorage.setItem("clientId", header.value);
+            clientId = header.value;
+            sendMessageToTabs();
         }
         if(header.name == "X-GIS-USER-ID"){
             //sharedRecourses["ivgpiduser"] = header.value;
-            window.localStorage.setItem("ivgpiduser", header.value);
+            userId = header.value;
+            sendMessageToTabs();
         }
         if(header.name == "User-Agent"){
             //sharedRecourses["userAgent"] = header.value;
-            window.localStorage.setItem("userAgent", header.value);
+            userAgent = header.value;
+            sendMessageToTabs();
         }
     });
 }
@@ -48,6 +56,26 @@ browser.webRequest.onBeforeSendHeaders.addListener(
     {urls: ["<all_urls>"]},
     ["blocking", "requestHeaders"]
 );
+
+function sendMessageToTabs() {
+    //let message = key + "," + token + "," + ivgpiduser + "," + clientId + "," + userAgent;
+    let to = token;
+    browser.tabs
+        .sendMessage(2, "token")
+        .then((response) => {
+            console.log("Message from the content script:");
+            console.log(response.response);
+        })
+}
+
+browser.browserAction.onClicked.addListener(() => {
+    browser.tabs
+        .query({
+            currentWindow: true,
+            active: true,
+        })
+        .then(sendMessageToTabs)
+});
 
 
 
