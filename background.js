@@ -1,81 +1,117 @@
-let script = document.createElement("script");
-script.type = "module";
-script.src = "";
-document.head.appendChild(script);
-let sharedRecourses = {
-    "key":"",
-    "token":"",
-    "ivgpiduser":"",
-    "clientId":"",
-    "userAgent":"",
+async function sendPutRequest(url = '', data = {}) {
+    // Default options are marked with *
+    const response = await fetch(url, {
+        method: 'PUT', // *GET, POST, PUT, DELETE, etc.
+        mode: 'cors', // no-cors, *cors, same-origin
+        referrer: 'https://usedcars.vwfs.com/',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': '*/*',
+            'Accept-Language': 'en',
+            'Ocp-Apim-Subscription-Key': key,
+            'oidc-access-token': token,
+            'User-Agent': userAgent,
+            'X-GIS-BUSINESSPARTNER-ID': businessPartnerId,
+            'X-GIS-CLIENT-ID': clientId,
+            'X-GIS-USER-ID': ivgpiduser,
+            'Content-Type': 'application/json' ,
+            'Origin': 'https://usedcars.vwfs.com',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site'
+        },
+
+        //referrerPolicy: 'origin', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+        body: JSON.stringify(data) // body data type must match "Content-Type" header
+    });
+    return response; // parses JSON response into native JavaScript objects
 }
 
-//export {sharedRecourses};
-
-let token = "";
-let key = "";
-let ivgpiduser = "";
-let clientId = "";
-let userAgent = "";
-
-function rewriteUserAgentHeader(e) {
-    //let new_header = { "name": "Access-Control-Expose-Headers", "value": "*"};
-    //e.requestHeaders.push(new_header);
-    //console.log(e.url);
+function gatherHeaderInformation(e) {
+    "use strict"
+    if(e.url.toString().match(/^(http|https):\/\/(api.usedcars.vwfs.com\/gis-functions\/V3\/offers\/)+.+(\/vehicles\/)+.+(\/details)/g) ){
+        realOfferID = e.url.match(/((DEU)+\d+(G-)\d{1,10})/g)[0].toString();
+        realFileID = e.url.match(/((DEU)+\d+(V-)\d{1,10})/g)[0].toString();
+	}
     e.requestHeaders.forEach((header) => {
         if(header.name == "Ocp-Apim-Subscription-Key"){
-            //sharedRecourses["key"] = header.value;
             key = header.value;
-            sendMessageToTabs();
+            //browser.tabs.query({ currentWindow: true }).then(sendMessageToTabs);
         }
         if(header.name == "oidc-access-token"){
-            //sharedRecourses["token"] = header.value;
-            token = header.token;
-            sendMessageToTabs();
+            token = header.value;
+            //browser.tabs.query({ currentWindow: true }).then(sendMessageToTabs);
         }
         if(header.name == "X-GIS-CLIENT-ID"){
-            //sharedRecourses["clientId"] = header.value;
             clientId = header.value;
-            sendMessageToTabs();
+            //browser.tabs.query({ currentWindow: true }).then(sendMessageToTabs);
         }
         if(header.name == "X-GIS-USER-ID"){
-            //sharedRecourses["ivgpiduser"] = header.value;
-            userId = header.value;
-            sendMessageToTabs();
+            ivgpiduser = header.value;
+           //browser.tabs.query({ currentWindow: true }).then(sendMessageToTabs);
         }
         if(header.name == "User-Agent"){
-            //sharedRecourses["userAgent"] = header.value;
             userAgent = header.value;
-            sendMessageToTabs();
+            //browser.tabs.query({ currentWindow: true }).then(sendMessageToTabs);
+        }
+        if(header.name == "X-GIS-BUSINESSPARTNER-ID"){
+            businessPartnerId = header.value;
+            //browser.tabs.query({ currentWindow: true }).then(sendMessageToTabs);
         }
     });
 }
 
 browser.webRequest.onBeforeSendHeaders.addListener(
-    rewriteUserAgentHeader,
+    gatherHeaderInformation,
     {urls: ["<all_urls>"]},
     ["blocking", "requestHeaders"]
 );
 
-function sendMessageToTabs() {
-    //let message = key + "," + token + "," + ivgpiduser + "," + clientId + "," + userAgent;
-    let to = token;
-    browser.tabs
-        .sendMessage(2, "token")
-        .then((response) => {
-            console.log("Message from the content script:");
-            console.log(response.response);
-        })
+function rewriteUserAgentHeader(e) {
+    "use strict"
+
+	for (const header of e.requestHeaders) {
+        if(header.name.toLowerCase() === "origin"){
+            header.value = 'https://usedcars.vwfs.com';
+        };
+		if(header.name.toLowerCase() === "cookie"){
+			header.name = '';
+            header.value = '';
+        };
+        console.debug(header.name + ": " + header.value);
+    };
+    console.debug("Header inserted successfully!");
+    console.debug(e.requestHeaders);
+	return { requestHeaders: e.requestHeaders };
 }
 
-browser.browserAction.onClicked.addListener(() => {
-    browser.tabs
-        .query({
-            currentWindow: true,
-            active: true,
-        })
-        .then(sendMessageToTabs)
+
+browser.webRequest.onBeforeSendHeaders.addListener(
+    rewriteUserAgentHeader,
+    {urls: ["https://api.usedcars.vwfs.com/gis-functions/V3/offers/*/bids"]},
+    ["blocking", "requestHeaders"]
+);
+
+var token = "token";
+var key = "";
+var ivgpiduser = "";
+var clientId = "";
+var userAgent = "";
+var businessPartnerId = "";
+var ivFileId = "";
+var realOfferID = "";
+var realFileID = "";
+
+browser.runtime.onMessage.addListener((request) => {
+    "use strict"
+    let url = "https://api.usedcars.vwfs.com/gis-functions/V3/offers/" + realOfferID + "/bids";
+    let putData = request.msg;
+	putData["ivFileId"] = realFileID;
+    console.debug(sendPutRequest(url, putData));
+    return Promise.resolve({ response: "transaction done"});
 });
+
+
 
 
 

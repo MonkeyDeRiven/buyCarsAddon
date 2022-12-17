@@ -1,17 +1,15 @@
-//import {sharedRecourses} from './background.js';
+/*let key = "";
 let token = "";
 let clientId = "";
 let businessPartnerId = "";
-let userId = "";
 let userAgent = "";
-
+let userId = "";
+ */
 //json Data
 let ivFileId = "";
 let kvps = "";
 
-
 let request = new XMLHttpRequest();
-//document.onload = buyCar();
 
 function sleep(ms) {
     "use strict"
@@ -22,11 +20,17 @@ waitTillSiteIsLoaded();
 
 async function waitTillSiteIsLoaded() {
     "use strict"
+    let counter = 0;
     while (true) {
         try {
             addRigedEvent();
             break;
         } catch {
+            counter++;
+            if(counter == 40){
+                console.log("Website wurde noch nicht vollständig geladen!");
+                counter = 0;
+            }
             await sleep(50);
         }
     }
@@ -35,22 +39,22 @@ async function waitTillSiteIsLoaded() {
 //add a new buy button to the website
 function embedRigedBuyButton() {
     "use strict"
-    let hereOld = document.getElementsByClassName("column-third");
-    let here = document.getElementsByClassName("o-layout__item u-1/1");
+    //let hereOld = document.getElementsByClassName("column-third");
+    let inFormDiv = document.getElementsByClassName("o-layout__item u-1/1");
     let clickMeButton = document.createElement("button");
-    clickMeButton.style = here[1].getElementsByClassName("c-btn")[0].style;
-    here[1].removeChild(here[1].getElementsByClassName("c-btn")[0]);
+    clickMeButton.style = inFormDiv[1].getElementsByClassName("c-btn")[0].style;
+    inFormDiv[1].removeChild(inFormDiv[1].getElementsByClassName("c-btn")[0]);
 
-    let notInForm = document.getElementsByClassName("o-layout__item u-2/4 u-1/1@s");
+    let notInFormDiv = document.getElementsByClassName("dialogMain ng-star-inserted");
 
     clickMeButton.innerText = "kaufen";
     clickMeButton.id = "riged"
     clickMeButton.type = "button";
 
-    notInForm[1].appendChild(clickMeButton);
+    notInFormDiv[0].appendChild(clickMeButton);
 
-    //here[1].appendChild(clickMeButton);
-    document.getElementById("riged").addEventListener("click", test);
+    //inFormDiv[1].appendChild(clickMeButton);
+    document.getElementById("riged").addEventListener("click", sendBody);
 
     //get carID and kvps
     let carId = document.getElementsByTagName("h6")[0].innerText;
@@ -64,11 +68,7 @@ function addRigedEvent(){
     trigger[1].addEventListener("click", embedRigedBuyButton);
 }
 
-function test(){
-    "use strict"
-    console.log(document.domain);
-}
-
+//not used
 function buyCar(){
     "use strict"
     let jsonDataArray = {
@@ -79,52 +79,69 @@ function buyCar(){
         "itBidAssistant":[]
     };
 
-    let jsonData = JSON.parse(JSON.stringify(jsonDataArray));
-    //https://api.usedcars.vwfs.com/gis-functions/B2C/offers/DEU80260G-2022724832/bids
-    let url = "https://www.google.com/";
+    let jsonData = JSON.stringify(jsonDataArray);
+    //api.usedcars.vwfs.com
+    let url = "https://google.com/gis-functions/V3/offers/" + ivFileId + "/bids";
 
-    request.open("POST", url); // URL für HTTP-PUT
-    //request.onreadystatechange = processData; //Callback-Handler zuordnen
-    for(let i = 0; i < sharedRecourses.length; i++){
-        console.log(sharedRecourses[i]);
-    }
+    request.open("PUT", url); // URL für HTTP-PUT
+    request.mozAnon = true;
+    request.onreadystatechange = processData; //Callback-Handler zuordnen
+
+
     request.setRequestHeader("Accept", "*/*");
+
     request.setRequestHeader("Accept-Language", "en");
-    request.setRequestHeader("Ocp-Apim-Subscription-Key", sharedRecourses.key);
-    request.setRequestHeader("oidc-access-token", sharedRecourses.token);
-    request.setRequestHeader("User-Agent", sharedRecourses.userAgent);
-    //request.setRequestHeader("X-GIS-BUSINESSPARTNER-ID", sharedRecourses.businessPartnerId);
-    request.setRequestHeader("X-GIS-CLIENT-ID", sharedRecourses.clientId);
-    request.setRequestHeader("X-GIS-USER-ID", sharedRecourses.ivgpiduser);
-    request.setRequestHeader("Content-Type", "application/json")
+    request.setRequestHeader("Referer", "https://usedcars.vwfs.com/");
+    request.setRequestHeader("Ocp-Apim-Subscription-Key", key);
+    request.setRequestHeader("oidc-access-token", token);
+    request.setRequestHeader("User-Agent", userAgent);
+    request.setRequestHeader("X-GIS-BUSINESSPARTNER-ID", businessPartnerId);
+    request.setRequestHeader("X-GIS-CLIENT-ID", clientId);
+    request.setRequestHeader("X-GIS-USER-ID", userId);
+    request.setRequestHeader("Content-Type", "application/json");
+    request.setRequestHeader("Origin", "https://usedcars.vwfs.com");
+    request.setRequestHeader("Sec-Fetch-Dest", "empty");
+    request.setRequestHeader("Sec-Fetch-Mode", "cors");
+    request.setRequestHeader("Sec-Fetch-Site", "same-site");
+
     request.send(jsonData); // Request abschicken
 }
 
+//not used
 function processData() {
     "use strict";
     if (request.readyState === 4) { // Uebertragung = DONE
         if (request.status === 200) { // HTTP-Status = OK
             if (request.responseText != null) {
                 //some response handling
-                alert("Auto erfolgreich gekauft");
+                console.debug(request.getAllResponseHeaders());
+                console.debug(request.responseText);
             }
-            else console.error("Dokument ist leer");
-        } else console.error("Uebertragung fehlgeschlagen" + request.status);
+            else console.debug("Dokument ist leer\n" + "Response Header: " + request.getAllResponseHeaders() + "\n" + "Response Body:" + request.responseText);
+        } else console.debug("Uebertragung fehlgeschlagen!\n"
+            + "Request Status: " + request.status + "\n"
+            + "Response Header: " + request.getAllResponseHeaders() + "\n"
+            + "Response Body:" + request.responseText);
     }
 }
 
-browser.runtime.onMessage.addListener((request) => {
-    "use strict"
 
-    token = request.t;
-    /*
-    key = request.k;
-    userId = request.userId;
-    clientId = request.cId;
-    userAgent = request.uAgent;
-     */
-
-    console.log(token);
-    return Promise.resolve({ response: "transaction done"});
-});
+function sendBody(){
+    let jsonDataArray = {
+        "ivFileId":ivFileId,
+        "ivPackageId":"",
+        "ivBuyFixedPrice":"X",
+        "ivKvpsFixedPrice":kvps,
+        "itBidAssistant":[]
+    };
+    let msgText = JSON.parse(JSON.stringify(jsonDataArray));
+    let message = {
+        msg:msgText,
+        fileId:ivFileId
+    }
+    browser.runtime.sendMessage(message).then((response) => {
+        console.log("Message from the background script:");
+        console.log(response.response);
+    })
+}
 
